@@ -2,11 +2,40 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, History, Crown } from "lucide-react";
+import { PlusCircle, History, Crown, CheckCircle, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
 import { useUserTier } from '@/hooks/use-user-tier';
+
+const tiers = [
+    {
+        name: "Free",
+        price: "$0",
+        priceDescription: "per month",
+        features: [
+            "1 Interview per day",
+            "5 Questions per round",
+            "HR, Technical, Behavioral, Aptitude rounds",
+            "Basic feedback",
+        ],
+        cta: "Your Current Plan",
+    },
+    {
+        name: "Premium",
+        price: "₹830", // Approx $10
+        priceDescription: "per month",
+        features: [
+            "10 Interviews per day",
+            "20 Questions per round",
+            "All rounds, including Resume-based",
+            "Advanced STAR method feedback",
+            "Unlimited access to all features",
+        ],
+        cta: "Upgrade to Premium",
+    },
+];
+
 
 export default function Home() {
   const { user } = useAuth();
@@ -44,11 +73,6 @@ export default function Home() {
               </Link>
             </Button>
           </div>
-            {user && userTier === 'free' && (
-                <p className="text-sm text-muted-foreground mt-2">
-                    Upgrade to unlock unlimited interviews and advanced features with a monthly subscription.
-                </p>
-            )}
         </div>
         <div className="flex justify-center items-center">
           <Image
@@ -95,6 +119,71 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
+        </div>
+      </div>
+      
+       <div className="mt-24 mb-16">
+        <h2 className="text-3xl font-headline font-semibold text-center mb-4">Features &amp; Plans</h2>
+        <p className="text-lg text-muted-foreground text-center mb-10">Choose the plan that's right for you.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+             <Card className={`flex flex-col border-2 ${userTier === 'free' ? 'border-primary' : ''}`}>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">Free</CardTitle>
+                        <CardDescription>
+                            <span className="text-3xl font-bold">$0</span>
+                            <span className="text-muted-foreground">/month</span>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-4">
+                        <ul className="space-y-2">
+                            {tiers[0].features.map((feature, i) => (
+                                <li key={i} className="flex items-center gap-2">
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
+                                    <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                     <CardContent>
+                        <Button className="w-full" disabled={userTier === 'free'} variant={userTier === 'free' ? 'outline' : 'default'}>
+                            {userTier === 'free' ? 'Your Current Plan' : 'Get Started'}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className={`relative flex flex-col border-2 ${userTier === 'premium' ? 'border-accent' : ''}`}>
+                    <div className="absolute top-0 right-4 -mt-4">
+                        <div className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                            <Star className="h-4 w-4" />
+                            Most Popular
+                        </div>
+                    </div>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">Premium</CardTitle>
+                        <CardDescription>
+                            <span className="text-3xl font-bold">₹830</span>
+                            <span className="text-muted-foreground">/month</span>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-4">
+                        <ul className="space-y-2">
+                            {tiers[1].features.map((feature, i) => (
+                                <li key={i} className="flex items-center gap-2">
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
+                                    <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                    <CardContent>
+                         <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                           <Link href="/pricing">
+                            <Crown className="mr-2 h-4 w-4"/>
+                            {userTier === 'premium' ? 'Your Current Plan' : 'Upgrade to Premium'}
+                           </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
         </div>
       </div>
     </div>
