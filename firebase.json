@@ -1,6 +1,11 @@
+
 {
-  "apphosting": {
-    "source": ".",
-    "backend": "interviewace-94uur"
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
   }
 }
