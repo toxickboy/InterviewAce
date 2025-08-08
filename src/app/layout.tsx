@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AppProviders } from '@/components/app-providers';
 import { AppShell } from '@/components/app-shell';
 import { AuthProvider } from '@/hooks/use-auth';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'InterviewAce',
@@ -31,6 +32,7 @@ export default function RootLayout({
             <Toaster />
           </AuthProvider>
         </AppProviders>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       </body>
     </html>
   );

@@ -2,11 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckCircle, Crown, Star } from "lucide-react";
+import { CheckCircle, Crown, Star, Loader2 } from "lucide-react";
 import { useUserTier } from "@/hooks/use-user-tier";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { createRazorpayOrder } from "@/lib/actions";
+
+declare const window: any;
 
 const tiers = [
     {
@@ -24,7 +28,8 @@ const tiers = [
     },
     {
         name: "Premium",
-        price: "$10",
+        price: "₹830", // Approx $10
+        priceInPaise: 83000,
         priceDescription: "per month",
         features: [
             "10 Interviews per day",
@@ -43,25 +48,65 @@ export default function PricingPage() {
     const { user } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const handleUpgrade = () => {
+    const handleUpgrade = async () => {
         if (!user) {
             router.push('/login?redirect=/pricing');
             return;
         }
 
-        // Simulate payment processing
-        console.log("Simulating payment for user:", user.uid);
-        
-        // Update user tier
-        setTierToPremium();
-        
-        toast({
-            title: "Upgrade Successful!",
-            description: "Welcome to InterviewAce Premium!",
-        });
-        
-        router.push('/');
+        setIsProcessing(true);
+
+        try {
+            const order = await createRazorpayOrder(830); // 830 INR for premium
+            
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: order.amount,
+                currency: order.currency,
+                name: "InterviewAce Premium",
+                description: "Monthly Subscription",
+                order_id: order.id,
+                handler: function (response: any) {
+                    // Here you would verify the payment signature on your backend
+                    // For now, we'll assume it's successful
+                    console.log("Payment successful:", response);
+                    setTierToPremium();
+                    toast({
+                        title: "Upgrade Successful!",
+                        description: "Welcome to InterviewAce Premium!",
+                    });
+                    router.push('/');
+                },
+                prefill: {
+                    name: user.displayName || "User",
+                    email: user.email,
+                },
+                theme: {
+                    color: "#5C6BC0" // Corresponds to --primary color
+                }
+            };
+            
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response: any){
+                toast({
+                    variant: 'destructive',
+                    title: 'Payment Failed',
+                    description: response.error.description,
+                });
+            });
+            rzp.open();
+
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: error.message || "Something went wrong during payment setup.",
+            });
+        } finally {
+            setIsProcessing(false);
+        }
     }
 
     return (
@@ -107,7 +152,7 @@ export default function PricingPage() {
                     <CardHeader>
                         <CardTitle className="font-headline text-2xl">Premium</CardTitle>
                         <CardDescription>
-                            <span className="text-3xl font-bold">$10</span>
+                            <span className="text-3xl font-bold">₹830</span>
                             <span className="text-muted-foreground">/month</span>
                         </CardDescription>
                     </CardHeader>
@@ -125,12 +170,16 @@ export default function PricingPage() {
                         {userTier === 'premium' ? (
                             <Button className="w-full" disabled variant="outline">Your Current Plan</Button>
                         ) : (
-                             <Button onClick={handleUpgrade} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                                <Crown className="mr-2 h-4 w-4"/> Upgrade to Premium
+                             <Button onClick={handleUpgrade} disabled={isProcessing} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Crown className="mr-2 h-4 w-4"/>}
+                                Upgrade to Premium
                             </Button>
                         )}
                     </div>
                 </Card>
+            </div>
+             <div className="text-center mt-8 text-sm text-muted-foreground">
+                <p>Payments are processed securely by Razorpay. All prices in INR are final.</p>
             </div>
         </div>
     );

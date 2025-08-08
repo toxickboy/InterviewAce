@@ -27,6 +27,9 @@ const nextConfig: NextConfig = {
         'https://6000-firebase-studio-1754626557342.cluster-fdkw7vjj7bgguspe3fbbc25tra.cloudworkstations.dev',
     ],
   },
+  env: {
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  }
 };
 
 export default nextConfig;
