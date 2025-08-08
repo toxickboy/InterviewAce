@@ -47,28 +47,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SidebarContent className="p-2">
             <SidebarMenu>
               <SidebarMenuItem>
-                <Link href="/" legacyBehavior passHref>
-                  <SidebarMenuButton isActive={pathname === '/'} tooltip="Dashboard">
+                <SidebarMenuButton asChild isActive={pathname === '/'} tooltip="Dashboard">
+                  <Link href="/">
                     <Home />
                     Dashboard
-                  </SidebarMenuButton>
-                </Link>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <Link href="/interview" legacyBehavior passHref>
-                  <SidebarMenuButton isActive={pathname.startsWith('/interview')} tooltip="New Interview">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/interview')} tooltip="New Interview">
+                  <Link href="/interview">
                     <PlusCircle />
                     New Interview
-                  </SidebarMenuButton>
-                </Link>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <Link href="/progress" legacyBehavior passHref>
-                  <SidebarMenuButton isActive={pathname.startsWith('/progress')} tooltip="Progress">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/progress')} tooltip="Progress">
+                  <Link href="/progress">
                     <BarChart2 />
                     Progress
-                  </SidebarMenuButton>
-                </Link>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
