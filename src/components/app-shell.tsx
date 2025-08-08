@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart2, Home, PlusCircle, LogIn, LogOut, Loader2 } from 'lucide-react';
+import { BarChart2, Home, PlusCircle, LogIn, LogOut, Loader2, Crown } from 'lucide-react';
 
 import {
   Sidebar,
@@ -27,11 +27,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import { useUserTier } from '@/hooks/use-user-tier';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
+  const { userTier } = useUserTier();
 
   const isInterviewSession = pathname.startsWith('/interview/') && pathname.split('/').length > 2;
   const isLoginPage = pathname === '/login';
@@ -52,6 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (pathname === '/') return 'Dashboard';
     if (pathname.startsWith('/interview')) return 'New Interview';
     if (pathname.startsWith('/progress')) return 'Progress';
+    if (pathname.startsWith('/pricing')) return 'Pricing';
     return 'InterviewAce';
   };
 
@@ -96,6 +99,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {user && userTier === 'free' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith('/pricing')} tooltip="Upgrade">
+                    <Link href="/pricing" className="text-accent-foreground bg-accent hover:bg-accent/90">
+                      <Crown />
+                      Upgrade
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>

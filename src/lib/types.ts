@@ -13,6 +13,7 @@ export interface Question {
 
 export interface InterviewSession {
   id:string;
+  userId: string; // Firebase UID or 'guest'
   jobRole: string;
   interviewType: 'full' | 'hr' | 'technical' | 'behavioral' | 'aptitude' | 'resume';
   resumeText?: string;

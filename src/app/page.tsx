@@ -1,10 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, History } from "lucide-react";
+import { PlusCircle, History, Crown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from '@/hooks/use-auth';
+import { useUserTier } from '@/hooks/use-user-tier';
 
 export default function Home() {
+  const { user } = useAuth();
+  const { userTier } = useUserTier();
+
   return (
     <div className="container mx-auto animate-in fade-in duration-500">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-12">
@@ -22,6 +27,14 @@ export default function Home() {
                 Start New Interview
               </Link>
             </Button>
+            {user && userTier === 'free' && (
+                 <Button asChild size="lg" className="shadow-lg hover:shadow-xl transition-shadow bg-accent text-accent-foreground hover:bg-accent/90">
+                  <Link href="/pricing">
+                    <Crown className="mr-2 h-5 w-5" />
+                    Upgrade to Premium
+                  </Link>
+                </Button>
+            )}
             <Button asChild variant="outline" size="lg">
               <Link href="/progress">
                 <History className="mr-2 h-5 w-5" />

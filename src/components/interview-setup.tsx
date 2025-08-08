@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuestionsAction, generateResumeQuestionsAction } from '@/lib/actions';
-import type { InterviewSession, Question, QuestionType, UserTier } from '@/lib/types';
+import type { InterviewSession, Question, QuestionType } from '@/lib/types';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useUserTier } from '@/hooks/use-user-tier';
@@ -45,23 +46,23 @@ export function InterviewSetup() {
   });
   
   useEffect(() => {
-    if (!user) {
+    if (userTier === 'free') {
         form.setValue('interviewType', 'technical');
         form.setValue('resumeText', '');
     } else {
         form.setValue('interviewType', 'full');
     }
-  }, [user, form]);
+  }, [userTier, form]);
 
   const { watch } = form;
   const resumeText = watch('resumeText');
   
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user && hasReachedLimit) {
+    if (hasReachedLimit) {
         toast({
             variant: "destructive",
             title: "Interview Limit Reached",
-            description: `As a guest user, you can only start ${interviewLimit} interview(s) per day. Please log in for more.`,
+            description: `You have reached your daily limit of ${interviewLimit} interview(s). Please upgrade to premium for more.`,
         });
         return;
     }
@@ -93,7 +94,7 @@ export function InterviewSetup() {
         allQuestions.push(...selectedQuestions.map(q => ({ id: uuidv4(), type: values.interviewType as QuestionType, text: q })));
       }
       
-      if (user && values.resumeText && values.resumeText.trim().length > 0) {
+      if (userTier === 'premium' && values.resumeText && values.resumeText.trim().length > 0) {
         const resumeQuestionsData = await generateResumeQuestionsAction({ 
             resumeText: values.resumeText,
             questionCount: questionCount
@@ -116,6 +117,7 @@ export function InterviewSetup() {
       
       const newSession: InterviewSession = {
         id: uuidv4(),
+        userId: user ? user.uid : 'guest',
         jobRole: values.jobRole,
         interviewType: values.interviewType,
         resumeText: values.resumeText,
@@ -159,9 +161,9 @@ export function InterviewSetup() {
             </Alert>
         ) : (
             <Alert className="mb-6">
-                <AlertTitle className="font-bold">Guest User</AlertTitle>
+                <AlertTitle className="font-bold">Free Plan</AlertTitle>
                 <AlertDescription>
-                    You are limited to {interviewLimit} interview per day with {questionCount} questions. <Link href="/login" className="underline font-semibold">Log in</Link> for more.
+                    You are on the free plan with {interviewLimit} interview per day and {questionCount} questions per round. <Link href="/pricing" className="underline font-semibold">Upgrade to Premium</Link> for more.
                 </AlertDescription>
             </Alert>
         )}
@@ -205,7 +207,7 @@ export function InterviewSetup() {
                         </SelectContent>
                     </Select>
                   <FormDescription>
-                      {userTier === 'free' ? 'As a guest user, you are limited to one round per interview.' : 'Choose the type of interview you want to practice.'}
+                      {userTier === 'free' ? 'As a free user, you are limited to one round per interview.' : 'Choose the type of interview you want to practice.'}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -228,14 +230,14 @@ export function InterviewSetup() {
                   <FormDescription>
                       {userTier === 'premium' ? 
                       'Pasting your resume will add resume-based questions to the selected round.' :
-                      'Log in to unlock resume-based questions.'
+                      'Upgrade to Premium to unlock resume-based questions.'
                       }
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={isGenerating || (userTier === 'free' && hasReachedLimit)} className="w-full">
+            <Button type="submit" disabled={isGenerating || hasReachedLimit} className="w-full">
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -248,7 +250,7 @@ export function InterviewSetup() {
                 </>
               )}
             </Button>
-            {userTier === 'free' && hasReachedLimit && (
+            {hasReachedLimit && (
                 <p className="text-sm text-destructive text-center">You have reached your daily interview limit.</p>
             )}
           </form>
