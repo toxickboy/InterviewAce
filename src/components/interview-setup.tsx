@@ -14,16 +14,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuestionsAction, generateResumeQuestionsAction } from '@/lib/actions';
-import type { InterviewSession, Question, QuestionType, VoiceOption } from '@/lib/types';
-import { Loader2, Sparkles, Volume2 } from 'lucide-react';
+import type { InterviewSession, Question, QuestionType } from '@/lib/types';
+import { Loader2, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch } from './ui/switch';
 
 const formSchema = z.object({
   jobRole: z.string().min(2, { message: 'Job role must be at least 2 characters.' }).max(100),
   resumeText: z.string().optional(),
   interviewType: z.enum(['full', 'hr', 'technical', 'behavioral', 'aptitude']),
-  enableVoice: z.boolean().default(false),
 });
 
 export function InterviewSetup() {
@@ -37,14 +35,13 @@ export function InterviewSetup() {
       jobRole: '',
       resumeText: '',
       interviewType: 'full',
-      enableVoice: false,
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
     try {
-      let allQuestions: Omit<Question, 'audioUrl'>[] = [];
+      let allQuestions: Omit<Question, 'feedback' | 'answer'>[] = [];
 
       // Generate standard questions
       const standardQuestionsData = await generateQuestionsAction({ jobRole: values.jobRole });
@@ -88,7 +85,6 @@ export function InterviewSetup() {
         id: uuidv4(),
         jobRole: values.jobRole,
         interviewType: values.interviewType,
-        voice: values.enableVoice ? 'female' : 'none',
         resumeText: values.resumeText,
         questions: allQuestions.map(q => ({ ...q })),
         currentQuestionIndex: 0,
@@ -157,26 +153,6 @@ export function InterviewSetup() {
                     </Select>
                   <FormDescription>Choose the type of interview you want to practice.</FormDescription>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="enableVoice"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Enable Interviewer Voice</FormLabel>
-                    <FormDescription>
-                      Have the questions read aloud by an AI voice.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
                 </FormItem>
               )}
             />

@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle, LogOut, PlayCircle } from 'lucide-react';
+import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle, LogOut } from 'lucide-react';
 import type { InterviewSession, Question } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
-import { analyzeAnswerAction, textToSpeechAction } from '@/lib/actions';
+import { analyzeAnswerAction } from '@/lib/actions';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -23,10 +23,8 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   const {
     isListening,
@@ -73,54 +71,6 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
         resetTranscript();
     }
   }, [transcript, resetTranscript]);
-
-  const generateAndPlayAudio = useCallback(async (question: Question) => {
-    if (!session || session.voice === 'none') return;
-    
-    if (question.audioUrl) {
-      if (audioRef.current) {
-        audioRef.current.src = question.audioUrl;
-        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
-      }
-      return;
-    }
-    
-    setIsGeneratingAudio(true);
-    try {
-      const audioDataUri = await textToSpeechAction({ text: question.text, voice: session.voice });
-      
-      setSession(prevSession => {
-        if (!prevSession) return null;
-        const updatedQuestions = prevSession.questions.map(q => 
-          q.id === question.id ? { ...q, audioUrl: audioDataUri } : q
-        );
-        const updatedSession = { ...prevSession, questions: updatedQuestions };
-        updateSessionInStorage(updatedSession);
-        return updatedSession;
-      });
-
-      if (audioDataUri && audioRef.current) {
-        audioRef.current.src = audioDataUri;
-        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
-      }
-    } catch (error) {
-      console.error("Failed to generate audio", error);
-      toast({ title: 'Error', description: 'Failed to generate question audio.', variant: 'destructive' });
-    } finally {
-      setIsGeneratingAudio(false);
-    }
-  }, [session, toast, updateSessionInStorage]);
-
-  useEffect(() => {
-    if (session?.questions) {
-        const currentQuestion = session.questions[session.currentQuestionIndex];
-        if (currentQuestion && !currentQuestion.audioUrl && session.voice !== 'none') {
-            generateAndPlayAudio(currentQuestion);
-        }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.currentQuestionIndex, session?.id]);
-
 
   const handleAnswerSubmit = async () => {
     if (!session || currentAnswer.trim() === '') return;
@@ -221,7 +171,6 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="min-h-screen bg-secondary/50">
-        <audio ref={audioRef} className="hidden" />
         <div className="container mx-auto max-w-3xl py-8">
             <div className="flex justify-between items-center mb-4">
               <p className="text-center text-sm text-muted-foreground">
@@ -262,17 +211,6 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
                                 <CardTitle className="font-headline text-lg">Interviewer</CardTitle>
                                 <Badge variant="outline" className="capitalize mt-2">{currentQuestion.type}</Badge>
                             </div>
-                            {session.voice !== 'none' && (
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => generateAndPlayAudio(currentQuestion)}
-                                    disabled={isGeneratingAudio}
-                                >
-                                    {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin"/> : <PlayCircle className="h-5 w-5"/>}
-                                    <span className="sr-only">Play Question</span>
-                                </Button>
-                            )}
                         </CardHeader>
                         <CardContent>
                             <p className="text-lg">{currentQuestion.text}</p>

@@ -6,8 +6,6 @@ import { generateInterviewQuestions } from '@/ai/flows/generate-interview-questi
 import type { GenerateInterviewQuestionsInput } from '@/ai/flows/generate-interview-questions';
 import { generateResumeBasedQuestions } from '@/ai/flows/generate-resume-based-questions';
 import type { GenerateResumeBasedQuestionsInput } from '@/ai/flows/generate-resume-based-questions';
-import { textToSpeech } from '@/ai/flows/text-to-speech';
-import type { TextToSpeechInput } from '@/ai/flows/text-to-speech';
 import {z} from 'zod';
 
 const generateQuestionsInputSchema = z.object({
@@ -38,17 +36,4 @@ const analyzeAnswerInputSchema = z.object({
 export async function analyzeAnswerAction(input: AnalyzeAnswerInput) {
     analyzeAnswerInputSchema.parse(input);
   return await analyzeAnswerAndProvideFeedback(input);
-}
-
-const textToSpeechInputSchema = z.object({
-    text: z.string(),
-    voice: z.enum(['female', 'none']),
-});
-export async function textToSpeechAction(input: TextToSpeechInput) {
-    textToSpeechInputSchema.parse(input);
-    if (input.voice === 'none') {
-        return '';
-    }
-    const { audioDataUri } = await textToSpeech(input);
-    return audioDataUri;
 }
