@@ -44,6 +44,11 @@ export default function Home() {
               </Link>
             </Button>
           </div>
+            {user && userTier === 'free' && (
+                <p className="text-sm text-muted-foreground mt-2">
+                    Upgrade to unlock unlimited interviews and advanced features with a monthly subscription.
+                </p>
+            )}
         </div>
         <div className="flex justify-center items-center">
           <Image
