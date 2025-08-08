@@ -20,6 +20,7 @@ const GenerateInterviewQuestionsOutputSchema = z.object({
   hrQuestions: z.array(z.string()).describe('An array of HR interview questions.'),
   technicalQuestions: z.array(z.string()).describe('An array of technical interview questions.'),
   behavioralQuestions: z.array(z.string()).describe('An array of behavioral interview questions.'),
+  aptitudeQuestions: z.array(z.string()).describe('An array of aptitude questions.'),
 });
 export type GenerateInterviewQuestionsOutput = z.infer<typeof GenerateInterviewQuestionsOutputSchema>;
 
@@ -33,11 +34,11 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateInterviewQuestionsOutputSchema},
   prompt: `You are an AI assistant designed to generate interview questions for a given job role.
 
-  Generate a diverse set of HR, technical, and behavioral questions suitable for the role.
+  Generate a diverse set of HR, technical, behavioral, and aptitude questions suitable for the role.
 
   Job Role: {{{jobRole}}}
 
-  Format the output as a JSON object with three keys: hrQuestions, technicalQuestions, and behavioralQuestions. Each key should contain an array of strings representing the corresponding questions.
+  Format the output as a JSON object with four keys: hrQuestions, technicalQuestions, behavioralQuestions, and aptitudeQuestions. Each key should contain an array of strings representing the corresponding questions.
   `,
 });
 

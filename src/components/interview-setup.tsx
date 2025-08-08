@@ -14,12 +14,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuestionsAction, generateResumeQuestionsAction } from '@/lib/actions';
-import type { InterviewSession, Question } from '@/lib/types';
+import type { InterviewSession, Question, QuestionType } from '@/lib/types';
 import { Loader2, Sparkles } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const formSchema = z.object({
   jobRole: z.string().min(2, { message: 'Job role must be at least 2 characters.' }).max(100),
   resumeText: z.string().optional(),
+  interviewType: z.enum(['full', 'hr', 'technical', 'behavioral', 'aptitude']),
 });
 
 export function InterviewSetup() {
@@ -32,6 +34,7 @@ export function InterviewSetup() {
     defaultValues: {
       jobRole: '',
       resumeText: '',
+      interviewType: 'full',
     },
   });
 
@@ -42,9 +45,24 @@ export function InterviewSetup() {
 
       // Generate standard questions
       const standardQuestionsData = await generateQuestionsAction({ jobRole: values.jobRole });
-      allQuestions.push(...standardQuestionsData.hrQuestions.map(q => ({ id: uuidv4(), type: 'hr' as const, text: q })));
-      allQuestions.push(...standardQuestionsData.technicalQuestions.map(q => ({ id: uuidv4(), type: 'technical' as const, text: q })));
-      allQuestions.push(...standardQuestionsData.behavioralQuestions.map(q => ({ id: uuidv4(), type: 'behavioral' as const, text: q })));
+      
+      const questionMapping: Record<QuestionType, string[]> = {
+        hr: standardQuestionsData.hrQuestions,
+        technical: standardQuestionsData.technicalQuestions,
+        behavioral: standardQuestionsData.behavioralQuestions,
+        aptitude: standardQuestionsData.aptitudeQuestions,
+        resume: [], // Resume questions are handled separately
+      };
+
+      if (values.interviewType === 'full') {
+        allQuestions.push(...standardQuestionsData.hrQuestions.map(q => ({ id: uuidv4(), type: 'hr' as const, text: q })));
+        allQuestions.push(...standardQuestionsData.technicalQuestions.map(q => ({ id: uuidv4(), type: 'technical' as const, text: q })));
+        allQuestions.push(...standardQuestionsData.behavioralQuestions.map(q => ({ id: uuidv4(), type: 'behavioral' as const, text: q })));
+        allQuestions.push(...standardQuestionsData.aptitudeQuestions.map(q => ({ id: uuidv4(), type: 'aptitude' as const, text: q })));
+      } else {
+        const selectedQuestions = questionMapping[values.interviewType as Exclude<QuestionType, 'resume'>];
+        allQuestions.push(...selectedQuestions.map(q => ({ id: uuidv4(), type: values.interviewType as QuestionType, text: q })));
+      }
 
       // Generate resume-based questions if resume is provided
       if (values.resumeText && values.resumeText.trim().length > 0) {
@@ -56,7 +74,7 @@ export function InterviewSetup() {
         toast({
             variant: "destructive",
             title: "Failed to generate questions",
-            description: "The AI couldn't generate questions for the given role. Please try again.",
+            description: "The AI couldn't generate questions for the given role and type. Please try a different combination.",
         });
         setIsGenerating(false);
         return;
@@ -66,6 +84,7 @@ export function InterviewSetup() {
       const newSession: InterviewSession = {
         id: uuidv4(),
         jobRole: values.jobRole,
+        interviewType: values.interviewType,
         resumeText: values.resumeText,
         questions: allQuestions,
         currentQuestionIndex: 0,
@@ -108,6 +127,31 @@ export function InterviewSetup() {
                     <Input placeholder="e.g., Software Engineer, Product Manager" {...field} />
                   </FormControl>
                   <FormDescription>The role you are interviewing for.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="interviewType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Interview Round</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select an interview round type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="full">Full Interview</SelectItem>
+                            <SelectItem value="hr">HR Round</SelectItem>
+                            <SelectItem value="technical">Technical / DSA Round</SelectItem>
+                            <SelectItem value="behavioral">Behavioral Round</SelectItem>
+                            <SelectItem value="aptitude">Aptitude Round</SelectItem>
+                        </SelectContent>
+                    </Select>
+                  <FormDescription>Choose the type of interview you want to practice.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

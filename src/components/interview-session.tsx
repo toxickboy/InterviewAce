@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle } from 'lucide-react';
+import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle, LogOut } from 'lucide-react';
 import type { InterviewSession, Question } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
@@ -14,7 +14,8 @@ import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Separator } from './ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 
 export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -123,15 +124,20 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
       updateSessionInStorage(updatedSession);
     } else {
       // Interview complete
-      const updatedSession: InterviewSession = {
-        ...session,
-        status: 'completed',
-      };
-      setSession(updatedSession);
-      updateSessionInStorage(updatedSession);
+      handleEndInterview();
     }
   };
   
+  const handleEndInterview = () => {
+    if (!session) return;
+    const updatedSession: InterviewSession = {
+        ...session,
+        status: 'completed',
+    };
+    setSession(updatedSession);
+    updateSessionInStorage(updatedSession);
+  }
+
   if (!session) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -162,10 +168,33 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   return (
     <div className="min-h-screen bg-secondary/50">
         <div className="container mx-auto max-w-3xl py-8">
-            <Progress value={(session.currentQuestionIndex / session.questions.length) * 100} className="mb-4" />
-            <p className="text-center text-sm text-muted-foreground mb-8">
-                Question {session.currentQuestionIndex + 1} of {session.questions.length}
-            </p>
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-center text-sm text-muted-foreground">
+                  Question {session.currentQuestionIndex + 1} of {session.questions.length}
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    End Interview
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to end the interview?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Your progress will be saved, and you can review your performance on the progress page.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleEndInterview}>End Interview</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            <Progress value={((session.currentQuestionIndex + 1) / session.questions.length) * 100} className="mb-8" />
 
             <div className="space-y-6">
                 <div className="flex items-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -185,7 +214,6 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
 
                 <div className="flex items-start gap-4">
                     <Avatar className="h-10 w-10 border">
-                        <AvatarImage src="https://placehold.co/100x100.png" alt="User" data-ai-hint="person avatar" />
                         <AvatarFallback><User/></AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-4">
