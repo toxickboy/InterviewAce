@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { createRazorpayOrder } from "@/lib/actions";
+import { createCashfreeOrder } from "@/lib/actions";
 
 declare const window: any;
 
@@ -28,8 +28,9 @@ const tiers = [
     },
     {
         name: "Premium",
-        price: "₹830", // Approx $10
+        price: "₹830",
         priceInPaise: 83000,
+        amountInRupees: 830,
         priceDescription: "per month",
         features: [
             "10 Interviews per day",
@@ -44,7 +45,7 @@ const tiers = [
 ];
 
 export default function PricingPage() {
-    const { userTier, setTierToPremium } = useUserTier();
+    const { userTier } = useUserTier();
     const { user } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -59,44 +60,21 @@ export default function PricingPage() {
         setIsProcessing(true);
 
         try {
-            const order = await createRazorpayOrder(830); // 830 INR for premium
-            
-            const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                amount: order.amount,
-                currency: order.currency,
-                name: "InterviewAce Premium",
-                description: "Monthly Subscription",
-                order_id: order.id,
-                handler: function (response: any) {
-                    // Here you would verify the payment signature on your backend
-                    // For now, we'll assume it's successful
-                    console.log("Payment successful:", response);
-                    setTierToPremium();
-                    toast({
-                        title: "Upgrade Successful!",
-                        description: "Welcome to InterviewAce Premium!",
-                    });
-                    router.push('/');
-                },
-                prefill: {
-                    name: user.displayName || "User",
-                    email: user.email,
-                },
-                theme: {
-                    color: "#5C6BC0" // Corresponds to --primary color
-                }
-            };
-            
-            const rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response: any){
-                toast({
-                    variant: 'destructive',
-                    title: 'Payment Failed',
-                    description: response.error.description,
-                });
+            const order = await createCashfreeOrder({
+                amount: tiers[1].amountInRupees,
+                userId: user.uid,
+                userEmail: user.email || 'test@example.com',
+                userName: user.displayName || 'Test User'
             });
-            rzp.open();
+
+            if (order.payment_session_id) {
+                const cashfree = new window.Cashfree(order.payment_session_id);
+                cashfree.checkout({
+                    paymentStyle: "popup", // or "redirect"
+                });
+            } else {
+                throw new Error("Failed to create payment session.");
+            }
 
         } catch (error: any) {
             toast({
@@ -182,7 +160,7 @@ export default function PricingPage() {
                 </Card>
             </div>
              <div className="text-center mt-8 text-sm text-muted-foreground">
-                <p>Payments are processed securely by Razorpay. All prices in INR are final.</p>
+                <p>Payments are processed securely by Cashfree. All prices in INR are final.</p>
             </div>
         </div>
     );

@@ -7,6 +7,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
 import { useUserTier } from '@/hooks/use-user-tier';
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const tiers = [
     {
@@ -23,7 +26,7 @@ const tiers = [
     },
     {
         name: "Premium",
-        price: "₹830", // Approx $10
+        price: "₹830",
         priceDescription: "per month",
         features: [
             "10 Interviews per day",
@@ -39,7 +42,28 @@ const tiers = [
 
 export default function Home() {
   const { user } = useAuth();
-  const { userTier } = useUserTier();
+  const { userTier, setTierToPremium } = useUserTier();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      setTierToPremium();
+      toast({
+        title: "Upgrade Successful!",
+        description: "Welcome to InterviewAce Premium!",
+        variant: 'default'
+      });
+    } else if (paymentStatus === 'failed' || paymentStatus === 'error') {
+       toast({
+        title: "Payment Failed",
+        description: "Your payment could not be processed. Please try again.",
+        variant: 'destructive'
+      });
+    }
+  }, [searchParams, setTierToPremium, toast]);
+
 
   return (
     <div className="container mx-auto animate-in fade-in duration-500">

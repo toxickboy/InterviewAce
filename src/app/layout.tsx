@@ -32,7 +32,7 @@ export default function RootLayout({
             <Toaster />
           </AuthProvider>
         </AppProviders>
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+        <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" />
       </body>
     </html>
   );

@@ -7,9 +7,8 @@ import type { GenerateInterviewQuestionsInput } from '@/ai/flows/generate-interv
 import { generateResumeBasedQuestions } from '@/ai/flows/generate-resume-based-questions';
 import type { GenerateResumeBasedQuestionsInput } from '@/ai/flows/generate-resume-based-questions';
 import {z} from 'zod';
-import Razorpay from 'razorpay';
-import { randomBytes } from 'crypto';
-import type { UserTier } from './types';
+import { v4 as uuidv4 } from 'uuid';
+import { Cashfree } from 'cashfree-pg';
 
 const generateQuestionsInputSchema = z.object({
     jobRole: z.string(),
@@ -46,27 +45,44 @@ export async function analyzeAnswerAction(input: AnalyzeAnswerInput) {
 
 const createOrderInputSchema = z.object({
     amount: z.number().positive(),
+    userId: z.string(),
+    userEmail: z.string().email(),
+    userName: z.string(),
 });
 
-export async function createRazorpayOrder(amount: number) {
-    createOrderInputSchema.parse({ amount });
+Cashfree.XClientId = process.env.CASHFREE_APP_ID!;
+Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY!;
+Cashfree.XEnvironment = Cashfree.Environment.SANDBOX; // Use .PRODUCTION for production
+
+export async function createCashfreeOrder(input: z.infer<typeof createOrderInputSchema>) {
+    createOrderInputSchema.parse(input);
+    const { amount, userId, userEmail, userName } = input;
+    const orderId = `order_${uuidv4()}`;
+
+    // The URL where the user will be redirected after payment
+    // Ensure this URL is whitelisted in your Cashfree dashboard
+    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/verify?order_id=${orderId}`;
 
     try {
-        const instance = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID!,
-            key_secret: process.env.RAZORPAY_KEY_SECRET!,
-        });
-
-        const options = {
-            amount: amount * 100, // amount in the smallest currency unit
-            currency: "INR",
-            receipt: `receipt_${randomBytes(4).toString('hex')}`,
+        const request = {
+            order_id: orderId,
+            order_amount: amount,
+            order_currency: "INR",
+            customer_details: {
+                customer_id: userId,
+                customer_email: userEmail,
+                customer_name: userName,
+                customer_phone: "9999999999", // A dummy phone number is required
+            },
+            order_meta: {
+                return_url: returnUrl,
+            },
         };
 
-        const order = await instance.orders.create(options);
-        return order;
-    } catch (error) {
-        console.error("Error creating Razorpay order:", error);
+        const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+        return response.data; // Contains payment_session_id
+    } catch (error: any) {
+        console.error("Error creating Cashfree order:", error.response.data);
         throw new Error("Could not create payment order. Please try again later.");
     }
 }
