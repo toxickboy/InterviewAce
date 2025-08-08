@@ -13,14 +13,15 @@ import {z} from 'genkit';
 
 const GenerateInterviewQuestionsInputSchema = z.object({
   jobRole: z.string().describe('The job role to generate interview questions for.'),
+  questionCount: z.number().describe('The number of questions to generate for each category.'),
 });
 export type GenerateInterviewQuestionsInput = z.infer<typeof GenerateInterviewQuestionsInputSchema>;
 
 const GenerateInterviewQuestionsOutputSchema = z.object({
-  hrQuestions: z.array(z.string()).describe('An array of 5 HR interview questions.'),
-  technicalQuestions: z.array(z.string()).describe('An array of 5 technical interview questions.'),
-  behavioralQuestions: z.array(z.string()).describe('An array of 5 behavioral interview questions.'),
-  aptitudeQuestions: z.array(z.string()).describe('An array of 5 aptitude questions.'),
+  hrQuestions: z.array(z.string()).describe('An array of HR interview questions.'),
+  technicalQuestions: z.array(z.string()).describe('An array of technical interview questions.'),
+  behavioralQuestions: z.array(z.string()).describe('An array of behavioral interview questions.'),
+  aptitudeQuestions: z.array(z.string()).describe('An array of aptitude questions.'),
 });
 export type GenerateInterviewQuestionsOutput = z.infer<typeof GenerateInterviewQuestionsOutputSchema>;
 
@@ -34,7 +35,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateInterviewQuestionsOutputSchema},
   prompt: `You are an AI assistant designed to generate interview questions for a given job role.
 
-  Generate a diverse set of 5 HR, 5 technical, 5 behavioral, and 5 aptitude questions suitable for the role. The questions should be highly relevant to the specified job role.
+  Generate a diverse set of {{{questionCount}}} HR, {{{questionCount}}} technical, {{{questionCount}}} behavioral, and {{{questionCount}}} aptitude questions suitable for the role. The questions should be highly relevant to the specified job role.
 
   Job Role: {{{jobRole}}}
 
@@ -50,6 +51,24 @@ const generateInterviewQuestionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+    
+    // Ensure the output arrays have the correct length
+    const ensureLength = (arr: string[], count: number) => {
+        if (arr.length > count) {
+            return arr.slice(0, count);
+        }
+        // Not adding filler questions as it might reduce quality. 
+        // The prompt should be reliable enough.
+        return arr;
+    }
+
+    if (output) {
+      output.hrQuestions = ensureLength(output.hrQuestions, input.questionCount);
+      output.technicalQuestions = ensureLength(output.technicalQuestions, input.questionCount);
+      output.behavioralQuestions = ensureLength(output.behavioralQuestions, input.questionCount);
+      output.aptitudeQuestions = ensureLength(output.aptitudeQuestions, input.questionCount);
+    }
+
     return output!;
   }
 );

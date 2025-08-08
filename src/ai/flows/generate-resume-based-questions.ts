@@ -15,6 +15,7 @@ const GenerateResumeBasedQuestionsInputSchema = z.object({
   resumeText: z
     .string()
     .describe('The text content of the resume to generate questions from.'),
+   questionCount: z.number().describe('The number of questions to generate.'),
 });
 export type GenerateResumeBasedQuestionsInput = z.infer<
   typeof GenerateResumeBasedQuestionsInputSchema
@@ -23,7 +24,7 @@ export type GenerateResumeBasedQuestionsInput = z.infer<
 const GenerateResumeBasedQuestionsOutputSchema = z.object({
   questions: z
     .array(z.string())
-    .describe('An array of 5 interview questions based on the resume.'),
+    .describe('An array of interview questions based on the resume.'),
 });
 export type GenerateResumeBasedQuestionsOutput = z.infer<
   typeof GenerateResumeBasedQuestionsOutputSchema
@@ -39,7 +40,7 @@ const prompt = ai.definePrompt({
   name: 'generateResumeBasedQuestionsPrompt',
   input: {schema: GenerateResumeBasedQuestionsInputSchema},
   output: {schema: GenerateResumeBasedQuestionsOutputSchema},
-  prompt: `You are an expert career coach specializing in helping people prepare for job interviews.  You will be provided with the text from their resume, and your job is to generate a list of 5 potential interview questions that a hiring manager might ask, based on the content of the resume.
+  prompt: `You are an expert career coach specializing in helping people prepare for job interviews.  You will be provided with the text from their resume, and your job is to generate a list of {{{questionCount}}} potential interview questions that a hiring manager might ask, based on the content of the resume.
 
 Resume:
 {{resumeText}}
@@ -55,6 +56,17 @@ const generateResumeBasedQuestionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+     // Ensure the output arrays have the correct length
+    const ensureLength = (arr: string[], count: number) => {
+        if (arr.length > count) {
+            return arr.slice(0, count);
+        }
+        return arr;
+    }
+
+    if (output) {
+        output.questions = ensureLength(output.questions, input.questionCount);
+    }
     return output!;
   }
 );

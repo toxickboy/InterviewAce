@@ -10,6 +10,7 @@ import {z} from 'zod';
 
 const generateQuestionsInputSchema = z.object({
     jobRole: z.string(),
+    questionCount: z.number(),
 });
 export async function generateQuestionsAction(
   input: GenerateInterviewQuestionsInput
@@ -20,6 +21,7 @@ export async function generateQuestionsAction(
 
 const generateResumeQuestionsInputSchema = z.object({
     resumeText: z.string(),
+    questionCount: z.number(),
 });
 export async function generateResumeQuestionsAction(
   input: GenerateResumeBasedQuestionsInput
