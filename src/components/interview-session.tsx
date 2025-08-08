@@ -114,12 +114,12 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     if (session?.questions) {
         const currentQuestion = session.questions[session.currentQuestionIndex];
-        if (currentQuestion) {
+        if (currentQuestion && session.voice !== 'none') {
             generateAndPlayAudio(currentQuestion);
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.currentQuestionIndex]);
+  }, [session?.currentQuestionIndex, session?.id]);
 
 
   const handleAnswerSubmit = async () => {
