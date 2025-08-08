@@ -1,5 +1,3 @@
-// This file is machine-generated - edit with care!
-
 'use server';
 
 /**
@@ -25,7 +23,7 @@ export type GenerateResumeBasedQuestionsInput = z.infer<
 const GenerateResumeBasedQuestionsOutputSchema = z.object({
   questions: z
     .array(z.string())
-    .describe('An array of interview questions based on the resume.'),
+    .describe('An array of 5 interview questions based on the resume.'),
 });
 export type GenerateResumeBasedQuestionsOutput = z.infer<
   typeof GenerateResumeBasedQuestionsOutputSchema
@@ -41,7 +39,7 @@ const prompt = ai.definePrompt({
   name: 'generateResumeBasedQuestionsPrompt',
   input: {schema: GenerateResumeBasedQuestionsInputSchema},
   output: {schema: GenerateResumeBasedQuestionsOutputSchema},
-  prompt: `You are an expert career coach specializing in helping people prepare for job interviews.  You will be provided with the text from their resume, and your job is to generate a list of potential interview questions that a hiring manager might ask, based on the content of the resume.
+  prompt: `You are an expert career coach specializing in helping people prepare for job interviews.  You will be provided with the text from their resume, and your job is to generate a list of 5 potential interview questions that a hiring manager might ask, based on the content of the resume.
 
 Resume:
 {{resumeText}}

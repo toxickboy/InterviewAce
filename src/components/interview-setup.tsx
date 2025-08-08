@@ -14,14 +14,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuestionsAction, generateResumeQuestionsAction } from '@/lib/actions';
-import type { InterviewSession, Question, QuestionType } from '@/lib/types';
-import { Loader2, Sparkles } from 'lucide-react';
+import type { InterviewSession, Question, QuestionType, VoiceOption } from '@/lib/types';
+import { Loader2, Sparkles, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 const formSchema = z.object({
   jobRole: z.string().min(2, { message: 'Job role must be at least 2 characters.' }).max(100),
   resumeText: z.string().optional(),
   interviewType: z.enum(['full', 'hr', 'technical', 'behavioral', 'aptitude']),
+  voice: z.enum(['male', 'female', 'none']),
 });
 
 export function InterviewSetup() {
@@ -35,13 +37,14 @@ export function InterviewSetup() {
       jobRole: '',
       resumeText: '',
       interviewType: 'full',
+      voice: 'none',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
     try {
-      const allQuestions: Question[] = [];
+      let allQuestions: Omit<Question, 'audioUrl'>[] = [];
 
       // Generate standard questions
       const standardQuestionsData = await generateQuestionsAction({ jobRole: values.jobRole });
@@ -85,8 +88,9 @@ export function InterviewSetup() {
         id: uuidv4(),
         jobRole: values.jobRole,
         interviewType: values.interviewType,
+        voice: values.voice as VoiceOption,
         resumeText: values.resumeText,
-        questions: allQuestions,
+        questions: allQuestions.map(q => ({ ...q })),
         currentQuestionIndex: 0,
         createdAt: new Date().toISOString(),
         status: 'in-progress',
@@ -144,7 +148,7 @@ export function InterviewSetup() {
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="full">Full Interview</SelectItem>
+                            <SelectItem value="full">Full Interview (All Rounds)</SelectItem>
                             <SelectItem value="hr">HR Round</SelectItem>
                             <SelectItem value="technical">Technical / DSA Round</SelectItem>
                             <SelectItem value="behavioral">Behavioral Round</SelectItem>
@@ -152,6 +156,43 @@ export function InterviewSetup() {
                         </SelectContent>
                     </Select>
                   <FormDescription>Choose the type of interview you want to practice.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="voice"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Interviewer Voice</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex items-center space-x-4"
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="none" />
+                        </FormControl>
+                        <FormLabel className="font-normal">None</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="male" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Male</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="female" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Female</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                   <FormDescription>Choose a voice to read the questions aloud.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -169,7 +210,7 @@ export function InterviewSetup() {
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>Pasting your resume will generate more specific questions.</FormDescription>
+                  <FormDescription>Pasting your resume will generate more specific questions based on your experience.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

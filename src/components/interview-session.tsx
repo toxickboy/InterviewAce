@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle, LogOut } from 'lucide-react';
+import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle, LogOut, Volume2, PlayCircle } from 'lucide-react';
 import type { InterviewSession, Question } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
-import { analyzeAnswerAction } from '@/lib/actions';
+import { analyzeAnswerAction, textToSpeechAction } from '@/lib/actions';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -23,8 +23,10 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const {
     isListening,
@@ -34,6 +36,20 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
     resetTranscript,
     hasRecognitionSupport,
   } = useSpeechRecognition();
+
+  const updateSessionInStorage = useCallback((updatedSession: InterviewSession) => {
+    try {
+      const sessions: InterviewSession[] = JSON.parse(localStorage.getItem('interview_sessions') || '[]');
+      const sessionIndex = sessions.findIndex(s => s.id === sessionId);
+      if (sessionIndex !== -1) {
+        sessions[sessionIndex] = updatedSession;
+        localStorage.setItem('interview_sessions', JSON.stringify(sessions));
+      }
+    } catch (error) {
+       console.error("Failed to update session in storage", error);
+       toast({ title: 'Error', description: 'Could not save session progress.', variant: 'destructive' });
+    }
+  }, [sessionId, toast]);
 
   useEffect(() => {
     try {
@@ -58,18 +74,57 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
     }
   }, [transcript, resetTranscript]);
 
-  const updateSessionInStorage = (updatedSession: InterviewSession) => {
-    const sessions: InterviewSession[] = JSON.parse(localStorage.getItem('interview_sessions') || '[]');
-    const sessionIndex = sessions.findIndex(s => s.id === sessionId);
-    if (sessionIndex !== -1) {
-      sessions[sessionIndex] = updatedSession;
-      localStorage.setItem('interview_sessions', JSON.stringify(sessions));
+  const generateAndPlayAudio = useCallback(async (question: Question, voice: 'male' | 'female') => {
+    if (question.audioUrl) {
+      // Audio already exists, just play it
+      if (audioRef.current) {
+        audioRef.current.src = question.audioUrl;
+        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+      }
+      return;
     }
-  };
+    
+    setIsGeneratingAudio(true);
+    try {
+      const audioDataUri = await textToSpeechAction({ text: question.text, voice });
+      
+      setSession(prevSession => {
+        if (!prevSession) return null;
+        const updatedQuestions = prevSession.questions.map(q => 
+          q.id === question.id ? { ...q, audioUrl: audioDataUri } : q
+        );
+        const updatedSession = { ...prevSession, questions: updatedQuestions };
+        updateSessionInStorage(updatedSession);
+        return updatedSession;
+      });
+
+      if (audioRef.current) {
+        audioRef.current.src = audioDataUri;
+        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+      }
+    } catch (error) {
+      console.error("Failed to generate audio", error);
+      toast({ title: 'Error', description: 'Failed to generate question audio.', variant: 'destructive' });
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  }, [toast, updateSessionInStorage]);
+
+  useEffect(() => {
+    if (session?.questions && session.voice !== 'none') {
+        const currentQuestion = session.questions[session.currentQuestionIndex];
+        if (currentQuestion) {
+            generateAndPlayAudio(currentQuestion, session.voice);
+        }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.currentQuestionIndex]);
+
 
   const handleAnswerSubmit = async () => {
     if (!session || currentAnswer.trim() === '') return;
     setIsAnalyzing(true);
+    setShowFeedback(false);
 
     try {
       const currentQuestion = session.questions[session.currentQuestionIndex];
@@ -85,16 +140,14 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
         feedback: feedback,
       };
 
-      const updatedQuestions = [...session.questions];
-      updatedQuestions[session.currentQuestionIndex] = updatedQuestion;
-      
-      const updatedSession: InterviewSession = {
-        ...session,
-        questions: updatedQuestions,
-      };
-      
-      setSession(updatedSession);
-      updateSessionInStorage(updatedSession);
+      setSession(prevSession => {
+        if (!prevSession) return null;
+        const updatedQuestions = [...prevSession.questions];
+        updatedQuestions[prevSession.currentQuestionIndex] = updatedQuestion;
+        const updatedSession = { ...prevSession, questions: updatedQuestions };
+        updateSessionInStorage(updatedSession);
+        return updatedSession;
+      });
       setShowFeedback(true);
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to analyze answer.', variant: 'destructive' });
@@ -116,12 +169,12 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
 
     const nextIndex = session.currentQuestionIndex + 1;
     if (nextIndex < session.questions.length) {
-      const updatedSession: InterviewSession = {
-        ...session,
-        currentQuestionIndex: nextIndex,
-      };
-      setSession(updatedSession);
-      updateSessionInStorage(updatedSession);
+       setSession(prevSession => {
+        if (!prevSession) return null;
+        const updatedSession = { ...prevSession, currentQuestionIndex: nextIndex };
+        updateSessionInStorage(updatedSession);
+        return updatedSession;
+      });
     } else {
       // Interview complete
       handleEndInterview();
@@ -130,12 +183,12 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   
   const handleEndInterview = () => {
     if (!session) return;
-    const updatedSession: InterviewSession = {
-        ...session,
-        status: 'completed',
-    };
-    setSession(updatedSession);
-    updateSessionInStorage(updatedSession);
+    setSession(prevSession => {
+      if (!prevSession) return null;
+      const updatedSession = { ...prevSession, status: 'completed' as const };
+      updateSessionInStorage(updatedSession);
+      return updatedSession;
+    });
   }
 
   if (!session) {
@@ -167,6 +220,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="min-h-screen bg-secondary/50">
+        <audio ref={audioRef} className="hidden" />
         <div className="container mx-auto max-w-3xl py-8">
             <div className="flex justify-between items-center mb-4">
               <p className="text-center text-sm text-muted-foreground">
@@ -202,9 +256,22 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
                         <AvatarFallback><Bot/></AvatarFallback>
                     </Avatar>
                     <Card className="flex-1">
-                        <CardHeader className="flex flex-row justify-between items-center">
-                            <CardTitle className="font-headline text-lg">Interviewer</CardTitle>
-                            <Badge variant="outline" className="capitalize">{currentQuestion.type}</Badge>
+                        <CardHeader className="flex flex-row justify-between items-start">
+                           <div>
+                                <CardTitle className="font-headline text-lg">Interviewer</CardTitle>
+                                <Badge variant="outline" className="capitalize mt-2">{currentQuestion.type}</Badge>
+                            </div>
+                            {session.voice !== 'none' && (
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => generateAndPlayAudio(currentQuestion, session.voice as 'male'|'female')}
+                                    disabled={isGeneratingAudio}
+                                >
+                                    {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin"/> : <PlayCircle className="h-5 w-5"/>}
+                                    <span className="sr-only">Play Question</span>
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <p className="text-lg">{currentQuestion.text}</p>
@@ -222,7 +289,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
                             value={currentAnswer}
                             onChange={(e) => setCurrentAnswer(e.target.value)}
                             className="min-h-[150px] text-base"
-                            disabled={showFeedback}
+                            disabled={showFeedback || isAnalyzing}
                         />
                         <div className="flex items-center justify-between">
                             {hasRecognitionSupport ? (
@@ -230,7 +297,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
                                     variant="outline"
                                     size="icon"
                                     onClick={isListening ? stopListening : startListening}
-                                    disabled={showFeedback}
+                                    disabled={showFeedback || isAnalyzing}
                                     className={isListening ? 'text-destructive' : ''}
                                 >
                                     {isListening ? <MicOff /> : <Mic />}
