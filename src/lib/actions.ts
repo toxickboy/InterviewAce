@@ -50,18 +50,17 @@ const createOrderInputSchema = z.object({
     userName: z.string(),
 });
 
-Cashfree.XClientId = process.env.CASHFREE_APP_ID!;
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY!;
-Cashfree.XEnvironment = Cashfree.Environment.SANDBOX; // Use .PRODUCTION for production
-
 export async function createCashfreeOrder(input: z.infer<typeof createOrderInputSchema>) {
     createOrderInputSchema.parse(input);
     const { amount, userId, userEmail, userName } = input;
-    const orderId = `order_${uuidv4()}`;
+    
+    // Initialize Cashfree SDK inside the function
+    Cashfree.XClientId = process.env.CASHFREE_APP_ID!;
+    Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY!;
+    Cashfree.XEnvironment = process.env.NODE_ENV === 'production' ? Cashfree.Environment.PRODUCTION : Cashfree.Environment.SANDBOX;
 
+    const orderId = `order_${uuidv4()}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-    // The URL where the user will be redirected after payment
-    // Ensure this URL is whitelisted in your Cashfree dashboard
     const returnUrl = `${appUrl}/api/payment/verify?order_id={order_id}`;
 
     try {
@@ -82,9 +81,9 @@ export async function createCashfreeOrder(input: z.infer<typeof createOrderInput
         };
 
         const response = await Cashfree.PGCreateOrder("2023-08-01", request);
-        return response; // Return the full response object
+        return response;
     } catch (error: any) {
-        console.error("Error creating Cashfree order:", error.response.data);
+        console.error("Error creating Cashfree order:", error);
         throw new Error("Could not create payment order. Please try again later.");
     }
 }
