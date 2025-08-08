@@ -17,13 +17,13 @@ import { generateQuestionsAction, generateResumeQuestionsAction } from '@/lib/ac
 import type { InterviewSession, Question, QuestionType, VoiceOption } from '@/lib/types';
 import { Loader2, Sparkles, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Switch } from './ui/switch';
 
 const formSchema = z.object({
   jobRole: z.string().min(2, { message: 'Job role must be at least 2 characters.' }).max(100),
   resumeText: z.string().optional(),
   interviewType: z.enum(['full', 'hr', 'technical', 'behavioral', 'aptitude']),
-  voice: z.enum(['male', 'female', 'none']),
+  enableVoice: z.boolean().default(false),
 });
 
 export function InterviewSetup() {
@@ -37,7 +37,7 @@ export function InterviewSetup() {
       jobRole: '',
       resumeText: '',
       interviewType: 'full',
-      voice: 'none',
+      enableVoice: false,
     },
   });
 
@@ -88,7 +88,7 @@ export function InterviewSetup() {
         id: uuidv4(),
         jobRole: values.jobRole,
         interviewType: values.interviewType,
-        voice: values.voice as VoiceOption,
+        voice: values.enableVoice ? 'female' : 'none',
         resumeText: values.resumeText,
         questions: allQuestions.map(q => ({ ...q })),
         currentQuestionIndex: 0,
@@ -162,38 +162,21 @@ export function InterviewSetup() {
             />
              <FormField
               control={form.control}
-              name="voice"
+              name="enableVoice"
               render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Interviewer Voice</FormLabel>
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Enable Interviewer Voice</FormLabel>
+                    <FormDescription>
+                      Have the questions read aloud by an AI voice.
+                    </FormDescription>
+                  </div>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex items-center space-x-4"
-                    >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="none" />
-                        </FormControl>
-                        <FormLabel className="font-normal">None</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="male" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Male</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="female" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Female</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </FormControl>
-                   <FormDescription>Choose a voice to read the questions aloud.</FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />

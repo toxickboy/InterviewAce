@@ -15,7 +15,7 @@ import {googleAI} from '@genkit-ai/googleai';
 
 const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to convert to speech.'),
-  voice: z.enum(['male', 'female', 'none']).describe('The desired voice for the speech output.'),
+  voice: z.enum(['female', 'none']).describe('The desired voice for the speech output.'),
 });
 export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
 
@@ -69,7 +69,8 @@ const textToSpeechFlow = ai.defineFlow(
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: input.voice === 'male' ? 'en-US-Standard-C' : 'en-US-Standard-E' },
+              // Using a clear, standard female voice.
+              prebuiltVoiceConfig: { voiceName: 'en-US-Standard-E' },
             },
           },
         },

@@ -1,7 +1,7 @@
 import type { AnalyzeAnswerOutput } from '@/ai/flows/analyze-answer-and-provide-feedback';
 
 export type QuestionType = 'hr' | 'technical' | 'behavioral' | 'resume' | 'aptitude';
-export type VoiceOption = 'male' | 'female' | 'none';
+export type VoiceOption = 'female' | 'none';
 
 export interface Question {
   id: string;

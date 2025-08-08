@@ -42,7 +42,7 @@ export async function analyzeAnswerAction(input: AnalyzeAnswerInput) {
 
 const textToSpeechInputSchema = z.object({
     text: z.string(),
-    voice: z.enum(['male', 'female', 'none']),
+    voice: z.enum(['female', 'none']),
 });
 export async function textToSpeechAction(input: TextToSpeechInput) {
     textToSpeechInputSchema.parse(input);
