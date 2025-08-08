@@ -74,9 +74,10 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
     }
   }, [transcript, resetTranscript]);
 
-  const generateAndPlayAudio = useCallback(async (question: Question, voice: 'male' | 'female') => {
+  const generateAndPlayAudio = useCallback(async (question: Question) => {
+    if (!session || session.voice === 'none') return;
+    
     if (question.audioUrl) {
-      // Audio already exists, just play it
       if (audioRef.current) {
         audioRef.current.src = question.audioUrl;
         audioRef.current.play().catch(e => console.error("Error playing audio:", e));
@@ -86,7 +87,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
     
     setIsGeneratingAudio(true);
     try {
-      const audioDataUri = await textToSpeechAction({ text: question.text, voice });
+      const audioDataUri = await textToSpeechAction({ text: question.text, voice: session.voice });
       
       setSession(prevSession => {
         if (!prevSession) return null;
@@ -98,7 +99,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
         return updatedSession;
       });
 
-      if (audioRef.current) {
+      if (audioDataUri && audioRef.current) {
         audioRef.current.src = audioDataUri;
         audioRef.current.play().catch(e => console.error("Error playing audio:", e));
       }
@@ -108,13 +109,13 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
     } finally {
       setIsGeneratingAudio(false);
     }
-  }, [toast, updateSessionInStorage]);
+  }, [session, toast, updateSessionInStorage]);
 
   useEffect(() => {
-    if (session?.questions && session.voice !== 'none') {
+    if (session?.questions) {
         const currentQuestion = session.questions[session.currentQuestionIndex];
         if (currentQuestion) {
-            generateAndPlayAudio(currentQuestion, session.voice);
+            generateAndPlayAudio(currentQuestion);
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -265,7 +266,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                    onClick={() => generateAndPlayAudio(currentQuestion, session.voice as 'male'|'female')}
+                                    onClick={() => generateAndPlayAudio(currentQuestion)}
                                     disabled={isGeneratingAudio}
                                 >
                                     {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin"/> : <PlayCircle className="h-5 w-5"/>}

@@ -15,7 +15,7 @@ import {googleAI} from '@genkit-ai/googleai';
 
 const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to convert to speech.'),
-  voice: z.enum(['male', 'female']).describe('The desired voice for the speech output.'),
+  voice: z.enum(['male', 'female', 'none']).describe('The desired voice for the speech output.'),
 });
 export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
 
@@ -59,6 +59,10 @@ const textToSpeechFlow = ai.defineFlow(
     outputSchema: TextToSpeechOutputSchema,
   },
   async (input) => {
+    if (input.voice === 'none') {
+        return { audioDataUri: '' };
+    }
+
     const { media } = await ai.generate({
         model: googleAI.model('gemini-2.5-flash-preview-tts'),
         config: {
