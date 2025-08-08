@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle, LogOut, Volume2, PlayCircle } from 'lucide-react';
+import { Mic, MicOff, Send, Loader2, Bot, User, ThumbsUp, ThumbsDown, GraduationCap, Lightbulb, CheckCircle, LogOut, PlayCircle } from 'lucide-react';
 import type { InterviewSession, Question } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
@@ -114,7 +114,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     if (session?.questions) {
         const currentQuestion = session.questions[session.currentQuestionIndex];
-        if (currentQuestion && session.voice !== 'none') {
+        if (currentQuestion && !currentQuestion.audioUrl && session.voice !== 'none') {
             generateAndPlayAudio(currentQuestion);
         }
     }
