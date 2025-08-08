@@ -57,7 +57,7 @@ export async function createCashfreeOrder(input: z.infer<typeof createOrderInput
     // Initialize Cashfree SDK inside the function
     Cashfree.XClientId = process.env.CASHFREE_APP_ID!;
     Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY!;
-    Cashfree.XEnvironment = process.env.NODE_ENV === 'production' ? Cashfree.Environment.PRODUCTION : Cashfree.Environment.SANDBOX;
+    Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
 
     const orderId = `order_${uuidv4()}`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
@@ -80,7 +80,7 @@ export async function createCashfreeOrder(input: z.infer<typeof createOrderInput
             order_note: `Premium subscription for InterviewAce`
         };
 
-        const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+        const response = await Cashfree.PGCreateOrder("2022-09-01", request);
         return response;
     } catch (error: any) {
         console.error("Error creating Cashfree order:", error);
