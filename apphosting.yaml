@@ -5,3 +5,14 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+  # Add your secrets here.
+  # https://firebase.google.com/docs/app-hosting/configure#manage-secrets
+  secrets:
+    - secret: RAZORPAY_KEY_ID
+    - secret: RAZORPAY_KEY_SECRET
+    - secret: GEMINI_API_KEY
+    - secret: NEXT_PUBLIC_RAZORPAY_KEY_ID
+      # Make this secret available to the client-side of your app
+      # DO NOT expose any sensitive information to the client.
+      # https://firebase.google.com/docs/app-hosting/configure#client-side-secrets
+      availableToClient: true
