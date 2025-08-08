@@ -59,9 +59,10 @@ export async function createCashfreeOrder(input: z.infer<typeof createOrderInput
     const { amount, userId, userEmail, userName } = input;
     const orderId = `order_${uuidv4()}`;
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
     // The URL where the user will be redirected after payment
     // Ensure this URL is whitelisted in your Cashfree dashboard
-    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/verify?order_id=${orderId}`;
+    const returnUrl = `${appUrl}/api/payment/verify?order_id={order_id}`;
 
     try {
         const request = {
