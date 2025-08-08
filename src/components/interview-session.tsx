@@ -9,11 +9,12 @@ import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
 import { analyzeAnswerAction } from '@/lib/actions';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Separator } from './ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
   const router = useRouter();
