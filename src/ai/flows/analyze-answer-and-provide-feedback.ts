@@ -9,11 +9,13 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import type {UserTier} from '@/lib/types';
 
 const AnalyzeAnswerInputSchema = z.object({
   question: z.string().describe('The interview question asked.'),
   answer: z.string().describe("The user's answer to the question."),
   resume: z.string().optional().describe("The user's resume, if available."),
+  userTier: z.enum(['free', 'premium']).default('free').describe("The user's subscription tier."),
 });
 export type AnalyzeAnswerInput = z.infer<typeof AnalyzeAnswerInputSchema>;
 
@@ -39,12 +41,16 @@ const analyzeAnswerAndProvideFeedbackPrompt = ai.definePrompt({
   1.  **Analyze the Answer:** Carefully evaluate the user's answer based on the provided question and their resume (if available).
   2.  **Provide STAR Method Feedback:** Structure your main feedback around the STAR method (Situation, Task, Action, Result). Assess if the user clearly described all four components.
   3.  **Score the Answer:** Assign a score from 0 to 100 based on the following criteria:
-      *   **Clarity & Conciseness:** How clear and to-the-point was the answer?
-      *   **Relevance:** How relevant was the answer to the question?
-      *   **Structure (STAR):** How well was the answer structured?
-      *   **Impact:** Did the user effectively communicate the impact of their actions?
+      *   Clarity & Conciseness: How clear and to-the-point was the answer?
+      *   Relevance: How relevant was the answer to the question?
+      *   Structure (STAR): How well was the answer structured?
+      *   Impact: Did the user effectively communicate the impact of their actions?
   4.  **Grammar & Keywords:** Provide specific feedback on grammar and suggest relevant keywords the user could have included.
   5.  **Format Output:** Ensure your response is a valid JSON object that strictly conforms to the defined output schema.
+  
+  {{#if (eq userTier "free")}}
+  **Constraint:** You are providing feedback for a free user. Please keep all feedback fields concise and to the point. The total response should be around 500 tokens.
+  {{/if}}
 
   **Interview Details:**
   - **Question:** {{{question}}}

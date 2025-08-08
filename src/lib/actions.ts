@@ -9,6 +9,7 @@ import type { GenerateResumeBasedQuestionsInput } from '@/ai/flows/generate-resu
 import {z} from 'zod';
 import Razorpay from 'razorpay';
 import { randomBytes } from 'crypto';
+import type { UserTier } from './types';
 
 const generateQuestionsInputSchema = z.object({
     jobRole: z.string(),
@@ -36,6 +37,7 @@ const analyzeAnswerInputSchema = z.object({
     question: z.string(),
     answer: z.string(),
     resume: z.string().optional(),
+    userTier: z.enum(['free', 'premium']),
 });
 export async function analyzeAnswerAction(input: AnalyzeAnswerInput) {
     analyzeAnswerInputSchema.parse(input);

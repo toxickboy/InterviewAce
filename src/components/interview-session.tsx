@@ -83,6 +83,7 @@ export function InterviewSessionClient({ sessionId }: { sessionId: string }) {
         question: currentQuestion.text,
         answer: currentAnswer,
         resume: session.resumeText,
+        userTier: session.userTier,
       });
 
       const updatedQuestion: Question = {
