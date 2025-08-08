@@ -1,3 +1,6 @@
 {
-  "apphosting": {}
+  "apphosting": {
+    "source": ".",
+    "backend": "interviewace-94uur"
+  }
 }
