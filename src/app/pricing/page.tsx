@@ -59,6 +59,16 @@ export default function PricingPage() {
 
         setIsProcessing(true);
 
+        if (typeof window.Cashfree === 'undefined') {
+            toast({
+                variant: 'destructive',
+                title: 'Initialization Error',
+                description: "Payment gateway is not available. Please refresh and try again.",
+            });
+            setIsProcessing(false);
+            return;
+        }
+
         try {
             const order = await createCashfreeOrder({
                 amount: tiers[1].amountInRupees,
@@ -70,7 +80,7 @@ export default function PricingPage() {
             if (order.payment_session_id) {
                 const cashfree = new window.Cashfree(order.payment_session_id);
                 cashfree.checkout({
-                    paymentStyle: "popup", // or "redirect"
+                    paymentStyle: "popup",
                 });
             } else {
                 throw new Error("Failed to create payment session.");
@@ -83,7 +93,10 @@ export default function PricingPage() {
                 description: error.message || "Something went wrong during payment setup.",
             });
         } finally {
-            setIsProcessing(false);
+            // Cashfree's popup will handle the UI flow, so we don't want to immediately set isProcessing to false
+            // unless there's an error. We can listen for popup close events if we want to be more precise.
+            // For now, we let the user re-attempt if the popup doesn't open.
+            setTimeout(() => setIsProcessing(false), 3000); // Re-enable button after 3s
         }
     }
 
