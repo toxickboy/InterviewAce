@@ -12,13 +12,13 @@ import {z} from 'genkit';
 
 const AnalyzeAnswerInputSchema = z.object({
   question: z.string().describe('The interview question asked.'),
-  answer: z.string().describe('The user\'s answer to the question.'),
-  resume: z.string().optional().describe('The user\'s resume, if available.'),
+  answer: z.string().describe("The user's answer to the question."),
+  resume: z.string().optional().describe("The user's resume, if available."),
 });
 export type AnalyzeAnswerInput = z.infer<typeof AnalyzeAnswerInputSchema>;
 
 const AnalyzeAnswerOutputSchema = z.object({
-  feedback: z.string().describe('Detailed feedback on the user\'s answer.'),
+  feedback: z.string().describe("Detailed feedback on the user's answer."),
   score: z.number().describe('A score representing the quality of the answer (0-100).'),
   grammarFeedback: z.string().describe('Feedback on the grammar of the answer.'),
   keywordFeedback: z.string().describe('Feedback on the keywords used in the answer.'),
@@ -44,10 +44,8 @@ const analyzeAnswerAndProvideFeedbackPrompt = ai.definePrompt({
   ${'{{#if resume}}'}Consider the following resume when providing feedback: {{{resume}}}{{'{{/if}}'}}
 
   Provide feedback on the grammar of the answer. Identify missing keywords that are relevant to the question.
-  Score:
-  Feedback:
-  Grammar Feedback:
-  Keyword Feedback:`,
+  
+  Format your response as a JSON object that conforms to the output schema.`,
 });
 
 const analyzeAnswerAndProvideFeedbackFlow = ai.defineFlow({
