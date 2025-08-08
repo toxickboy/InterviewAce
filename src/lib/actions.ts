@@ -78,10 +78,11 @@ export async function createCashfreeOrder(input: z.infer<typeof createOrderInput
             order_meta: {
                 return_url: returnUrl,
             },
+            order_note: `Premium subscription for InterviewAce`
         };
 
         const response = await Cashfree.PGCreateOrder("2023-08-01", request);
-        return response.data; // Contains payment_session_id
+        return response; // Return the full response object
     } catch (error: any) {
         console.error("Error creating Cashfree order:", error.response.data);
         throw new Error("Could not create payment order. Please try again later.");

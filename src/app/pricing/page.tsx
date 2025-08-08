@@ -59,28 +59,30 @@ export default function PricingPage() {
 
         setIsProcessing(true);
 
-        if (typeof window.Cashfree === 'undefined') {
-            toast({
-                variant: 'destructive',
-                title: 'Initialization Error',
-                description: "Payment gateway is not available. Please refresh and try again.",
-            });
-            setIsProcessing(false);
-            return;
-        }
-
         try {
-            const order = await createCashfreeOrder({
+            if (typeof window.Cashfree === 'undefined') {
+                toast({
+                    variant: 'destructive',
+                    title: 'Initialization Error',
+                    description: "Payment gateway is not available. Please refresh and try again.",
+                });
+                setIsProcessing(false);
+                return;
+            }
+
+            const response = await createCashfreeOrder({
                 amount: tiers[1].amountInRupees,
                 userId: user.uid,
                 userEmail: user.email || 'test@example.com',
                 userName: user.displayName || 'Test User'
             });
 
-            if (order.payment_session_id) {
-                const cashfree = new window.Cashfree(order.payment_session_id);
-                cashfree.checkout({
-                    paymentStyle: "popup",
+            const order = response.data;
+
+            if (order && order.payment_session_id) {
+                 window.Cashfree.checkout({
+                    paymentSessionId: order.payment_session_id,
+                    returnUrl: order.order_meta.return_url,
                 });
             } else {
                 throw new Error("Failed to create payment session.");
@@ -92,12 +94,10 @@ export default function PricingPage() {
                 title: 'Error',
                 description: error.message || "Something went wrong during payment setup.",
             });
-        } finally {
-            // Cashfree's popup will handle the UI flow, so we don't want to immediately set isProcessing to false
-            // unless there's an error. We can listen for popup close events if we want to be more precise.
-            // For now, we let the user re-attempt if the popup doesn't open.
-            setTimeout(() => setIsProcessing(false), 3000); // Re-enable button after 3s
-        }
+             setIsProcessing(false);
+        } 
+        // We don't set isProcessing to false here in the success case, 
+        // as the user will be redirected by Cashfree.
     }
 
     return (
