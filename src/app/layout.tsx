@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AppProviders } from '@/components/app-providers';
 import { AppShell } from '@/components/app-shell';
+import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
   title: 'InterviewAce',
@@ -23,10 +24,12 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AppProviders>
-          <AppShell>
-            {children}
-          </AppShell>
-          <Toaster />
+          <AuthProvider>
+            <AppShell>
+              {children}
+            </AppShell>
+            <Toaster />
+          </AuthProvider>
         </AppProviders>
       </body>
     </html>

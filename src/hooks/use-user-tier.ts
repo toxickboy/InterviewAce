@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { UserTier, InterviewSession } from '@/lib/types';
+import { useAuth } from './use-auth';
 
 const TIER_CONFIG = {
     free: {
@@ -15,44 +16,51 @@ const TIER_CONFIG = {
 }
 
 export const useUserTier = () => {
-    const [userTier, setUserTierState] = useState<UserTier>('free');
+    const { user } = useAuth();
+    const [userTier, setUserTier] = useState<UserTier>('free');
     const [hasReachedLimit, setHasReachedLimit] = useState(false);
+
+    useEffect(() => {
+        const tier = user ? 'premium' : 'free';
+        setUserTier(tier);
+    }, [user]);
 
     const getTodayDateString = () => {
         return new Date().toISOString().split('T')[0];
     }
     
-    const setUserTier = (tier: UserTier) => {
-        localStorage.setItem('user_tier', tier);
-        setUserTierState(tier);
-    }
-    
-    const checkInterviewLimit = useCallback((tier: UserTier) => {
-        const sessions: InterviewSession[] = JSON.parse(localStorage.getItem('interview_sessions') || '[]');
-        const today = getTodayDateString();
-        const todaysSessions = sessions.filter(s => s.createdAt.startsWith(today) && s.userTier === tier);
+    const checkInterviewLimit = useCallback(() => {
+        // Only check limit for free tier (guests)
+        if (userTier === 'premium') {
+            setHasReachedLimit(false);
+            return;
+        }
 
-        if (todaysSessions.length >= TIER_CONFIG[tier].interviewLimit) {
-            setHasReachedLimit(true);
-        } else {
+        try {
+            const sessions: InterviewSession[] = JSON.parse(localStorage.getItem('interview_sessions') || '[]');
+            const today = getTodayDateString();
+            
+            // For free tier, we check sessions created with the 'free' userTier property
+            const todaysSessions = sessions.filter(s => s.createdAt.startsWith(today) && s.userTier === 'free');
+
+            if (todaysSessions.length >= TIER_CONFIG.free.interviewLimit) {
+                setHasReachedLimit(true);
+            } else {
+                setHasReachedLimit(false);
+            }
+        } catch (error) {
+            console.error("Failed to parse interview sessions from localStorage", error);
             setHasReachedLimit(false);
         }
-    }, []);
+    }, [userTier]);
+
 
     useEffect(() => {
-        const storedTier = localStorage.getItem('user_tier') as UserTier | null;
-        const currentTier = storedTier || 'free';
-        setUserTierState(currentTier);
-        checkInterviewLimit(currentTier);
-    }, [checkInterviewLimit]);
-
-    useEffect(() => {
-        checkInterviewLimit(userTier);
+        checkInterviewLimit();
     }, [userTier, checkInterviewLimit]);
 
     return {
         userTier,
-        setUserTier,
         questionCount: TIER_CONFIG[userTier].questionCount,
         interviewLimit: TIER_CONFIG[userTier].interviewLimit,
         hasReachedLimit,

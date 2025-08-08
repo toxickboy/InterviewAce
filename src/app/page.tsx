@@ -1,4 +1,3 @@
-import { UserTierSwitcher } from "@/components/user-tier-switcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, History } from "lucide-react";
@@ -41,10 +40,6 @@ export default function Home() {
             className="rounded-full shadow-2xl border-8 border-card"
           />
         </div>
-      </div>
-
-      <div className="my-8">
-        <UserTierSwitcher />
       </div>
 
       <div className="mt-16 mb-8">
