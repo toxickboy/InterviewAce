@@ -175,6 +175,9 @@ export default function PricingPage() {
                                 Upgrade to Premium
                             </Button>
                         )}
+                        <p className="text-xs text-muted-foreground mt-3 text-center">
+                            By upgrading, you agree to a recurring monthly subscription. You can cancel anytime.
+                        </p>
                     </div>
                 </Card>
             </div>
